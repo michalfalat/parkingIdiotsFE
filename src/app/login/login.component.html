@@ -1,0 +1,19 @@
+<div class="loginPartial">
+<div *ngIf="authService.isAuthenticated(); else notLogged" >
+  <button md-button [mdMenuTriggerFor]="loginMenu">
+  <i class="material-icons ">person</i>{{authService.getUserName()}}<i class="material-icons">arrow_drop_down</i></button>
+  <md-menu #loginMenu="mdMenu">
+  <button md-menu-item>
+    <i class="material-icons">settings</i>
+    Nastavenia
+  </button>  
+  <button md-menu-item (click)="doLogout()">
+    <i class="material-icons">power_settings_new</i>
+    Odhlásiť
+  </button>
+</md-menu>
+</div>
+<ng-template #notLogged>
+   <button md-button (click)="ShowLoginForm()">Prihlásiť</button>
+</ng-template>  
+</div>
