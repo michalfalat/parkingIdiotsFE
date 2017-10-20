@@ -1,0 +1,54 @@
+<md-card class="registerCard">
+  <md-card-header>
+
+
+    <md-card-title class="registerCardHeader">Registration</md-card-title>
+    <md-card-subtitle>Join to us</md-card-subtitle>
+  </md-card-header>
+  <md-card-content>
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+
+        <md-input-container class="formInputFull">
+          <md-icon mdPrefix class="inputIcon md-darkerIcon">email</md-icon>
+          <input mdInput placeholder="Email" formControlName="Email" id="Email">
+        </md-input-container>
+        <div *ngIf="!registerForm.get('Email').valid && ( registerForm.get('Email').touched)" class="alert alert-error">
+          <div *ngIf="registerForm.get('Email').errors.email || registerForm.get('Email').errors.required">
+            Email is not valid email address.
+          </div>
+        </div>
+
+        <md-input-container class="formInputFull">
+          <md-icon mdPrefix class="inputIcon md-darkerIcon">lock</md-icon>
+          <input mdInput placeholder="Password" type="Password" id="Password" formControlName="Password">
+        </md-input-container>
+        <div *ngIf="!registerForm.get('Password').valid && (registerForm.get('Password').touched)"
+          class="alert alert-error">
+          <div *ngIf="registerForm.get('Password').errors.minlength || registerForm.get('Password').errors.required">
+            Password must have at least 6 characters.
+          </div>
+          <div *ngIf="registerForm.get('Password').errors.maxLength">
+            Password cannot have more than 30 characters.
+          </div>
+        </div>
+
+        <md-input-container class="formInputFull">
+          <md-icon mdPrefix class="inputIcon md-darkerIcon">lock</md-icon>
+          <input mdInput placeholder="Confirm Password" type="password" id="ConfirmPassword" formControlName="ConfirmPassword">
+        </md-input-container>
+        <div *ngIf="!registerForm.get('ConfirmPassword').valid && (registerForm.get('ConfirmPassword').dirty || registerForm.get('ConfirmPassword').touched)"
+          class="alert alert-error">
+          <div *ngIf="registerForm.get('ConfirmPassword').errors.MatchPassword">
+            Passwords do not match.
+          </div>
+        </div>
+        <md-progress-bar  *ngIf="waiting" mode="indeterminate"></md-progress-bar>
+        <button md-raised-button type="submit" color="primary" class="buttonFullWidth" [disabled]="!registerForm.valid || waiting">Register</button>
+    </form>
+  </md-card-content>
+  <md-card-content>
+    <div *ngIf="hasFailed" class="alert alert-error">
+      {{errorMessage}}
+    </div>
+    </md-card-content>
+</md-card>
