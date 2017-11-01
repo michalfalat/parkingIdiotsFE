@@ -46,6 +46,8 @@ public class MainActivity extends Activity {
     private static ArrayList<Post> data;
     static View.OnClickListener myOnClickListener;
     private static ArrayList<Integer> removedItems;
+    private ArrayList<Post> testData;
+    private Integer currentItem = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,23 +66,77 @@ public class MainActivity extends Activity {
         layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
-       ArrayList<Post> testData = new ArrayList<Post>();
 
+
+      testData = new ArrayList<Post>();
         adapter = new CustomAdapter(testData);
+        recyclerView.setAdapter(adapter);
+        //for (Integer i = 0; i < 5; i++) {
+            new MyTask().execute(5);
+        //}
+
+
+
 
         recyclerView.setAdapter(adapter);
 
-        for(Integer i =0; i<5; i++) {
-            try {
-                Post p = this.parseBestItemJSONObject(this.getBestItems(i));
-                System.out.println("Data added to dataser!");
-                testData.add(p);
-                recyclerView.setAdapter(adapter);
-                adapter.notifyDataSetChanged();
-            }
-            catch(Exception e){
+        System.out.println("Setting adapter again!");
+    }
 
+
+    private class MyTask extends AsyncTask<Integer, Integer, Integer> {
+
+        // Runs in UI before background thread is called
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            // Do something like display a progress bar
+        }
+
+        // This is run in a background thread
+        @Override
+        protected Integer doInBackground(Integer... params) {
+            // get the string from params, which is an array
+            Integer itemTotal = params[0];
+              Integer current;
+            Post p = null;
+            try {
+                p = parseBestItemJSONObject(getBestItems(currentItem));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+            System.out.println("Data added to dataset!");
+            testData.add(p);
+            currentItem++;
+
+            return itemTotal;
+        }
+
+        // This is called from background thread but runs in UI
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            super.onProgressUpdate(values);
+
+            // Do things like update the progress bar
+        }
+
+        // This runs in UI when background thread finishes
+        @Override
+        protected void onPostExecute(Integer result) {
+            super.onPostExecute(result);
+
+            recyclerView.setAdapter(adapter);
+
+            adapter.notifyDataSetChanged();
+            if(currentItem < result) {
+
+                System.out.println("Starting new task for " + currentItem);
+                new MyTask().execute(result);
+            }
+            // Do things like hide the progress bar or change a TextView
         }
     }
 
@@ -101,7 +157,7 @@ public class MainActivity extends Activity {
                 //newGame();
                 return true;
             case R.id.help:
-               // showHelp();
+                // showHelp();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -109,12 +165,9 @@ public class MainActivity extends Activity {
     }
 
 
-
-    public void onViewCreated(View view, Bundle savedInstanceState)
-    {
+    public void onViewCreated(View view, Bundle savedInstanceState) {
         int SDK_INT = android.os.Build.VERSION.SDK_INT;
-        if (SDK_INT > 8)
-        {
+        if (SDK_INT > 8) {
             StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
                     .permitAll().build();
             StrictMode.setThreadPolicy(policy);
@@ -123,14 +176,13 @@ public class MainActivity extends Activity {
         }
     }
 
-    public JSONObject getBestItems(Integer index) throws IOException, JSONException
-    {
+    public JSONObject getBestItems(Integer index) throws IOException, JSONException {
         HttpURLConnection urlConnection = null;
         URL url = new URL("http://missho-testing.aspone.cz/home/GetBestItems?index=" + index.toString());
         urlConnection = (HttpURLConnection) url.openConnection();
         urlConnection.setRequestMethod("GET");
-        urlConnection.setReadTimeout(10000 /* milliseconds */ );
-        urlConnection.setConnectTimeout(15000 /* milliseconds */ );
+        urlConnection.setReadTimeout(10000 /* milliseconds */);
+        urlConnection.setConnectTimeout(15000 /* milliseconds */);
         urlConnection.setDoOutput(true);
         urlConnection.connect();
 
@@ -149,23 +201,23 @@ public class MainActivity extends Activity {
         return new JSONObject(jsonString);
     }
 
-    public Post parseBestItemJSONObject(JSONObject o) throws JSONException{
+    public Post parseBestItemJSONObject(JSONObject o) throws JSONException {
         Boolean sucess = o.getBoolean("success");
         String message = o.getString("message");
-        if(sucess){
+        if (sucess) {
             JSONObject data = o.getJSONObject("data");
             String id = data.getString("Id");
             String authorID = data.getString("AuthorID");
             String authorName = data.getString("AuthorName");
             String text = data.getString("Description");
             String place = data.getString("Place");
-           // String img64Base  = data.getString("Img64BaseString");
+            // String img64Base  = data.getString("Img64BaseString");
             String imgPath = data.getString("ImgPath");
             String created = data.getString("Created");
             Long viewed = data.getLong("Viewed");
             Long popularity = data.getLong("Popularity");
             Boolean obsolete = data.getBoolean("Obsolete");
-            Post p = new Post(authorName,created,imgPath,text, popularity,viewed);
+            Post p = new Post(authorName, created, imgPath, text, popularity, viewed);
             return p;
         }
         return null;
