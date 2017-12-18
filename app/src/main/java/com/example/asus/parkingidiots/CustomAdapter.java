@@ -1,7 +1,5 @@
 package com.example.asus.parkingidiots;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,13 +7,12 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.asus.parkingidiots.MainActivity;
-import com.example.asus.parkingidiots.R;
+import com.squareup.picasso.Picasso;
 
-import java.io.InputStream;
-import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Date;
 
 public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.MyViewHolder> {
 
@@ -27,8 +24,11 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.MyViewHold
 
         TextView textViewName;
         TextView textViewTime;
+        TextView totalLikes;
+        TextView totalViews;
         ImageView post_photo;
         TextView post_desc;
+        ImageView buttonLike;
 
         public MyViewHolder(View itemView) {
             super(itemView);
@@ -36,6 +36,9 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.MyViewHold
             this.textViewTime = (TextView) itemView.findViewById(R.id.time);
             this.post_photo = (ImageView) itemView.findViewById(R.id.post_photo);
             this.post_desc = (TextView) itemView.findViewById(R.id.post_description);
+            this.totalLikes = (TextView) itemView.findViewById(R.id.post_totalLikes);
+            this.totalViews = (TextView) itemView.findViewById(R.id.post_totalComments);
+            this.buttonLike = (ImageView) itemView.findViewById(R.id.button_like);
         }
     }
 
@@ -63,21 +66,49 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.MyViewHold
         TextView textViewName = holder.textViewName;
         TextView textViewTime = holder.textViewTime;
         TextView postDescription = holder.post_desc;
+        final TextView totalLikes= holder.totalLikes;
+        TextView totalViews = holder.totalViews;
         ImageView post_photo = holder.post_photo;
-
-        textViewName.setText(dataSet.get(listPosition).getUserName());
-        textViewTime.setText(dataSet.get(listPosition).getDate());
-        postDescription.setText(dataSet.get(listPosition).getAuthorText());
-        try {
-            final String url = "http://missho-testing.aspone.cz" + dataSet.get(listPosition).getImg() ;
-            Bitmap bitmap = BitmapFactory.decodeStream((InputStream) new URL(url).getContent());
-            post_photo.setImageBitmap(bitmap);
-            post_photo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            post_photo.setAdjustViewBounds(true);
+        final ImageView buttonLike = holder.buttonLike;
+        buttonLike.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                buttonLike.setBackgroundResource(R.drawable.like2);
+                String likes = totalLikes.getText().toString();
+                Integer likeNumber = Integer.parseInt(likes);
+                ++likeNumber;
+                totalLikes.setText(likeNumber.toString());
+            }
+        });
+        if(dataSet.get(listPosition)  == null)
+        {
+            return;
         }
-        catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+
+        Long date = Long.parseLong(dataSet.get(listPosition).getDate().replaceAll("\\D+",""));
+        DateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+        if(dataSet.get(listPosition) != null ) {
+            textViewName.setText(dataSet.get(listPosition).getUserName());
+            textViewTime.setText(df.format((new Date(date))));
+            postDescription.setText(dataSet.get(listPosition).getAuthorText());
+            totalLikes.setText(dataSet.get(listPosition).getLikes().toString());
+            totalViews.setText(dataSet.get(listPosition).getViews().toString());
+            try {
+                final String url = "http://missho-testing.aspone.cz" + dataSet.get(listPosition).getImg();
+                Picasso.with(holder.post_photo.getContext())
+                        .load(url)
+                        .resize(400, 300) // resizes the image to these dimensions (in pixel)
+                        .centerCrop()
+                        .into(post_photo);
+
+                post_photo.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                post_photo.setAdjustViewBounds(true);
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
         //imageView.setImageResource(dataSet.get(listPosition).getImage());
     }

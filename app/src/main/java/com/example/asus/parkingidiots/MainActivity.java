@@ -3,63 +3,64 @@ package com.example.asus.parkingidiots;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
-import android.os.StrictMode;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.CardView;
+import android.os.Handler;
+import android.os.StrictMode;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ImageView;
-import android.widget.TextView;
+import android.widget.Toast;
+
+import com.github.pwittchen.infinitescroll.library.InfiniteScrollListener;
+import com.google.gson.Gson;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.List;
-
-import static android.content.ContentValues.TAG;
 
 public class MainActivity extends Activity {
 
     private static RecyclerView.Adapter adapter;
-    private RecyclerView.LayoutManager layoutManager;
+    private LinearLayoutManager layoutManager;
     private static RecyclerView recyclerView;
     private static ArrayList<Post> data;
     static View.OnClickListener myOnClickListener;
     private static ArrayList<Integer> removedItems;
     private ArrayList<Post> testData;
     private Integer currentItem = 0;
+    private Boolean scrolledtoEnd = false;
+    private EndlessRecyclerViewScrollListener scrollListener;
+    SwipeRefreshLayout swipeRefreshLayout;
+
+    private SharedPreferences mPrefs;
+
+    private String configFileName = "appConfiguration";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
+        ConfigContainer.init(getApplicationContext());
 
         setContentView(R.layout.activity_main);
+        if(ConfigContainer.getUser() == null) {
+            Intent myIntent = new Intent(MainActivity.this, InitialActivity.class);
+            startActivityForResult(myIntent, 1);
+           // finish();
+        }
 
 
         myOnClickListener = new MyOnClickListener(this);
-
         recyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
         recyclerView.setHasFixedSize(true);
 
@@ -67,12 +68,52 @@ public class MainActivity extends Activity {
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
 
+        swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.simpleSwipeRefreshLayout);
+
+        swipeRefreshLayout.setRefreshing(true);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+
+                currentItem = 0;
+                scrolledtoEnd  = false;
+                testData = new ArrayList<Post>();
+                adapter = new CustomAdapter(testData);
+                recyclerView.setAdapter(adapter);
+                new MyTask().execute(5);
+
+                // implement Handler to wait for 3 seconds and then update UI means update value of TextView
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        // cancle the Visual indication of a refresh
+                       // swipeRefreshLayout.setRefreshing(false);
+
+                    }
+                }, 3000);
+            }
+        });
 
       testData = new ArrayList<Post>();
         adapter = new CustomAdapter(testData);
         recyclerView.setAdapter(adapter);
-        //for (Integer i = 0; i < 5; i++) {
-            new MyTask().execute(5);
+        new MyTask().execute(5);
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(linearLayoutManager);
+        // Retain an instance so that you can call `resetState()` for fresh searches
+        scrollListener = new EndlessRecyclerViewScrollListener(linearLayoutManager) {
+            @Override
+            public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
+                // Triggered only when new data needs to be appended to the list
+                // Add whatever code is needed to append new items to the bottom of the list
+                if(!scrolledtoEnd) {
+                    new MyTask().execute(1);
+                }
+            }
+        };
+        // Adds the scroll listener to RecyclerView
+        recyclerView.addOnScrollListener(scrollListener);
+
         //}
 
 
@@ -102,15 +143,17 @@ public class MainActivity extends Activity {
               Integer current;
             Post p = null;
             try {
-                p = parseBestItemJSONObject(getBestItems(currentItem));
+                p = parseBestItemJSONObject(HttpConnector.getBestItems(currentItem));
             } catch (JSONException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
             System.out.println("Data added to dataset!");
-            testData.add(p);
-            currentItem++;
+            if(p != null ) {
+                testData.add(p);
+                currentItem++;
+            }
 
             return itemTotal;
         }
@@ -128,10 +171,13 @@ public class MainActivity extends Activity {
         protected void onPostExecute(Integer result) {
             super.onPostExecute(result);
 
-            recyclerView.setAdapter(adapter);
+            //recyclerView.setAdapter(adapter);
 
             adapter.notifyDataSetChanged();
             if(currentItem < result) {
+                if(currentItem> 2) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
 
                 System.out.println("Starting new task for " + currentItem);
                 new MyTask().execute(result);
@@ -153,12 +199,14 @@ public class MainActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
         switch (item.getItemId()) {
-            case R.id.new_game:
-                //newGame();
+            case R.id.take_photo:
+                this.startTakePhotoActivity();
                 return true;
-            case R.id.help:
-                // showHelp();
+            case R.id.settings:
+                this.startInitialActivity();
                 return true;
+            case R.id.my_photos:
+            return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -176,29 +224,64 @@ public class MainActivity extends Activity {
         }
     }
 
-    public JSONObject getBestItems(Integer index) throws IOException, JSONException {
-        HttpURLConnection urlConnection = null;
-        URL url = new URL("http://missho-testing.aspone.cz/home/GetBestItems?index=" + index.toString());
-        urlConnection = (HttpURLConnection) url.openConnection();
-        urlConnection.setRequestMethod("GET");
-        urlConnection.setReadTimeout(10000 /* milliseconds */);
-        urlConnection.setConnectTimeout(15000 /* milliseconds */);
-        urlConnection.setDoOutput(true);
-        urlConnection.connect();
 
-        BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()));
-        StringBuilder sb = new StringBuilder();
+    private InfiniteScrollListener createInfiniteScrollListener() {
+        return new InfiniteScrollListener(1, layoutManager) {
+            @Override public void onScrolledToEnd(final int firstVisibleItemPosition) {
+                // load your items here
+                // logic of loading items will be different depending on your specific use case
 
-        String line;
-        while ((line = br.readLine()) != null) {
-            sb.append(line + "\n");
+                if(!scrolledtoEnd) {
+                    new MyTask().execute(1);
+                    // when new items are loaded, combine old and new items, pass them to your adapter
+                    // and call refreshView(...) method from InfiniteScrollListener class to refresh RecyclerView
+                    //refreshView(recyclerView, new CustomAdapter(testData), firstVisibleItemPosition);
+                }
+            }
+        };
+    }
+
+
+
+    private ConfigModel getConfigurationFile(){
+
+        Gson gson = new Gson();
+        String json = mPrefs.getString(configFileName, "");
+        ConfigModel conf = gson.fromJson(json, ConfigModel.class);
+        return conf;
+    }
+
+    private void saveConfigurationFile(ConfigModel conf) {
+        SharedPreferences.Editor prefsEditor = mPrefs.edit();
+        Gson gson = new Gson();
+        String jsonConf = gson.toJson(conf);
+        prefsEditor.putString(configFileName, jsonConf);
+        prefsEditor.commit();
+    }
+
+    @Override
+    public void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
+        if (requestCode == 2) { //InitialActivity
+            if (resultCode == Activity.RESULT_OK) {
+                ConfigModel configuration  = (ConfigModel) data.getSerializableExtra("result");
+                saveConfigurationFile(configuration);
+                Toast.makeText(MainActivity.this, "Settings saved!", Toast.LENGTH_SHORT).show();
+            }
+            if (resultCode == Activity.RESULT_CANCELED) {
+                //Write your code if there's no result
+            }
         }
-        br.close();
+        else if (requestCode == 1) { //Settings activity
+            if (resultCode == Activity.RESULT_OK) {
+                ConfigModel configuration  = (ConfigModel) data.getSerializableExtra("result");
+                saveConfigurationFile(configuration);
+                Toast.makeText(MainActivity.this, "Settings saved!", Toast.LENGTH_SHORT).show();
+            }
+            if (resultCode == Activity.RESULT_CANCELED) {
+                //Write your code if there's no result
+            }
+        }
 
-        String jsonString = sb.toString();
-        System.out.println("JSON: " + jsonString);
-
-        return new JSONObject(jsonString);
     }
 
     public Post parseBestItemJSONObject(JSONObject o) throws JSONException {
@@ -220,7 +303,27 @@ public class MainActivity extends Activity {
             Post p = new Post(authorName, created, imgPath, text, popularity, viewed);
             return p;
         }
+        if(message.equals("END"))
+        {
+
+            System.out.println("SCROLLED to END!");
+            this.scrolledtoEnd = true;
+        }
         return null;
+    }
+
+
+
+    private void startInitialActivity() {
+        Intent myIntent = new Intent(MainActivity.this, InitialActivity.class);
+        myIntent.putExtra("key", ""); //Optional parameters
+        startActivityForResult(myIntent, 2);
+    }
+
+    private void startTakePhotoActivity() {
+        Intent myIntent = new Intent(MainActivity.this, PhotoActivity.class);
+        myIntent.putExtra("key", ""); //Optional parameters
+        startActivityForResult(myIntent, 3);
     }
 
     private static class MyOnClickListener implements View.OnClickListener {

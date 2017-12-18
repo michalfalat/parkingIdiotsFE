@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:descendantFocusability="beforeDescendants"
+    android:focusableInTouchMode="true"
+    android:layout_height="match_parent">
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+
+        <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:context="com.example.asus.parkingidiots.PhotoActivity">
+
+
+            <Button
+                android:id="@+id/btnRunCamera"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Odfotiť"></Button>
+
+            <TextView
+                android:id="@+id/or"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_below="@+id/btnRunCamera"
+                android:gravity="center"
+                android:text="Alebo" />
+
+            <Button
+                android:id="@+id/btnUpload"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/or"
+                android:onClick="pickImage"
+                android:text="Nahrať zo súboru">
+
+            </Button>
+
+            <ImageView
+                android:id="@+id/imgPreview"
+                android:adjustViewBounds="true"
+                android:layout_centerInParent="true"
+
+                android:layout_width="170dp"
+                android:layout_height="170dp"
+                android:layout_below="@+id/btnUpload">
+
+            </ImageView>
+
+            <TextView
+                android:id="@+id/labelDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_below="@+id/imgPreview"
+                android:layout_marginTop="10dp"
+                android:text="Zadajte popis" />
+
+            <EditText
+                android:id="@+id/inputDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/labelDescription"
+                android:layout_marginTop="1dp"
+                android:hint="Zadajte popis"
+                android:inputType="textPersonName" />
+
+            <TextView
+                android:id="@+id/labelPlace"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/inputDesc"
+                android:layout_marginTop="10dp"
+                android:text="Zadajte miesto" />
+
+            <EditText
+                android:id="@+id/inputPlace"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/labelPlace"
+                android:layout_marginTop="10dp"
+                android:hint="Napr. Bratislava"
+                android:inputType="textPersonName" />
+
+            <Button
+                android:id="@+id/btnSend"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/inputPlace"
+                android:background="@color/colorPrimary"
+                android:textColor="@color/colorWhite"
+                android:onClick="sendPost"
+                android:text="Odoslať" />
+
+            <TextView
+                android:id="@+id/loadingPlace"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/labelPlace"
+                android:layout_alignBottom="@+id/labelPlace"
+                android:layout_alignParentEnd="true"
+                android:layout_marginRight="15dp"
+                android:text="Zisťujem polohu" />
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:indeterminate="true"
+                android:layout_below="@+id/inputDesc"
+                android:layout_width="30dp"
+                android:layout_marginTop="5dp"
+                android:layout_marginRight="10dp"
+
+                android:layout_height="30dp"
+                android:layout_toLeftOf="@+id/loadingPlace" />
+
+
+        </RelativeLayout>
+
+    </ScrollView>
+</RelativeLayout>

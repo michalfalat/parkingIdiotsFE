@@ -18,7 +18,7 @@ public class Post {
         this.img = img;
         this.authorText = authorText;
         this.likes = likes;
-        Views = views;
+        this.Views = views;
     }
 
     public String getUserName() {
